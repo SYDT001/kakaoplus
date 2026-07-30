@@ -256,6 +256,12 @@ function mergeDailyByIndex(seriesList){
   }
   return out;
 }
+function couponSortValue(name){
+  const m=String(name||'').match(/(\d+(?:\.\d+)?)\s*(만원|원|%)/);
+  if(!m)return Number.MAX_SAFE_INTEGER;
+  const num=Number(m[1]);
+  return m[2]==='만원'?num*10000:num;
+}
 function computeWeeks(rows){
   const seen=new Set();
   let minDate=null;
@@ -294,7 +300,7 @@ function recomputeCouponUsage(rows,couponNumberRows,bs){
   const ensureCoupon=(t,name)=>{if(!couponUsage[t].has(name))couponUsage[t].set(name,{name,customers:new Set(),coupons:new Set(),sales:0,discount:0,qty:0,receipts:new Set(),generated:0,returned:new Set()});return couponUsage[t].get(name)};
   rows.forEach(r=>{const b=brandOf(r);if(!bs.includes(b))return;const c=String(r.couponno||'').trim(),info=couponMap.get(c),name=info?info.name:'미분류 쿠폰';const isReversal=Number(r.real_amt||0)<0||Number(r.sale_qty||0)<0;['ALL',b].forEach(t=>{const x=ensureCoupon(t,name);if(r.csno){const cs=String(r.csno);x.customers.add(cs);if(!couponCustomerTypes[t].has(cs))couponCustomerTypes[t].set(cs,new Set());couponCustomerTypes[t].get(cs).add(name)}if(c)x.coupons.add(c);if(r.slip)x.receipts.add(String(r.slip));x.sales+=Number(r.real_amt||0);x.discount+=Number(r.coupon_amt||0);x.qty+=Number(r.sale_qty||0);if(!info&&c)unmapped[t].add(c);if(isReversal&&c)x.returned.add(c)})});
   couponNumberRows.forEach(r=>{const b=brandOf(r),name=String(r['쿠폰종류']||'미분류').trim(),c=String(r.couponno||'').trim();if(!c||!bs.includes(b))return;['ALL',b].forEach(t=>ensureCoupon(t,name).generated++)});
-  all.forEach(b=>{couponUsage[b]=[...couponUsage[b].values()].map(x=>({name:x.name,customers:x.customers.size,coupons:x.coupons.size,sales:x.sales,discount:x.discount,qty:x.qty,receipts:x.receipts.size,generated:x.generated,returned:x.returned.size})).sort((a,z)=>z.sales-a.sales);const counts={};couponCustomerTypes[b].forEach(v=>counts[v.size]=(counts[v.size]||0)+1);couponOverlap[b]={uniqueCustomers:couponCustomerTypes[b].size,multiCustomers:Object.entries(counts).filter(([k])=>Number(k)>1).reduce((a,[,v])=>a+v,0),usageCounts:counts,unmapped:unmapped[b].size}});
+  all.forEach(b=>{couponUsage[b]=[...couponUsage[b].values()].map(x=>({name:x.name,customers:x.customers.size,coupons:x.coupons.size,sales:x.sales,discount:x.discount,qty:x.qty,receipts:x.receipts.size,generated:x.generated,returned:x.returned.size})).sort((a,z)=>couponSortValue(a.name)-couponSortValue(z.name));const counts={};couponCustomerTypes[b].forEach(v=>counts[v.size]=(counts[v.size]||0)+1);couponOverlap[b]={uniqueCustomers:couponCustomerTypes[b].size,multiCustomers:Object.entries(counts).filter(([k])=>Number(k)>1).reduce((a,[,v])=>a+v,0),usageCounts:counts,unmapped:unmapped[b].size}});
   return {couponUsage,couponOverlap};
 }
 
@@ -390,7 +396,7 @@ function aggregateWorkbook(wb){
   const ensureCoupon=(t,name)=>{if(!couponUsage[t].has(name))couponUsage[t].set(name,{name,customers:new Set(),coupons:new Set(),sales:0,discount:0,qty:0,receipts:new Set(),generated:0,returned:new Set()});return couponUsage[t].get(name)};
   filteredErp.forEach(r=>{const b=brandOf(r);if(!bs.includes(b))return;const c=String(r.couponno||'').trim(),info=couponMap.get(c),name=info?info.name:'미분류 쿠폰';const isReversal=Number(r.real_amt||0)<0||Number(r.sale_qty||0)<0;['ALL',b].forEach(t=>{const x=ensureCoupon(t,name);if(r.csno){const cs=String(r.csno);x.customers.add(cs);if(!couponCustomerTypes[t].has(cs))couponCustomerTypes[t].set(cs,new Set());couponCustomerTypes[t].get(cs).add(name)}if(c)x.coupons.add(c);if(r.slip)x.receipts.add(String(r.slip));x.sales+=Number(r.real_amt||0);x.discount+=Number(r.coupon_amt||0);x.qty+=Number(r.sale_qty||0);if(!info&&c)unmapped[t].add(c);if(isReversal&&c)x.returned.add(c)})});
   couponNumberRows.forEach(r=>{const b=brandOf(r),name=String(r['쿠폰종류']||'미분류').trim(),c=String(r.couponno||'').trim();if(!c||!bs.includes(b))return;['ALL',b].forEach(t=>ensureCoupon(t,name).generated++)});
-  all.forEach(b=>{couponUsage[b]=[...couponUsage[b].values()].map(x=>({name:x.name,customers:x.customers.size,coupons:x.coupons.size,sales:x.sales,discount:x.discount,qty:x.qty,receipts:x.receipts.size,generated:x.generated,returned:x.returned.size})).sort((a,z)=>z.sales-a.sales);const counts={};couponCustomerTypes[b].forEach(v=>counts[v.size]=(counts[v.size]||0)+1);couponOverlap[b]={uniqueCustomers:couponCustomerTypes[b].size,multiCustomers:Object.entries(counts).filter(([k])=>Number(k)>1).reduce((a,[,v])=>a+v,0),usageCounts:counts,unmapped:unmapped[b].size}});
+  all.forEach(b=>{couponUsage[b]=[...couponUsage[b].values()].map(x=>({name:x.name,customers:x.customers.size,coupons:x.coupons.size,sales:x.sales,discount:x.discount,qty:x.qty,receipts:x.receipts.size,generated:x.generated,returned:x.returned.size})).sort((a,z)=>couponSortValue(a.name)-couponSortValue(z.name));const counts={};couponCustomerTypes[b].forEach(v=>counts[v.size]=(counts[v.size]||0)+1);couponOverlap[b]={uniqueCustomers:couponCustomerTypes[b].size,multiCustomers:Object.entries(counts).filter(([k])=>Number(k)>1).reduce((a,[,v])=>a+v,0),usageCounts:counts,unmapped:unmapped[b].size}});
   const colors={ALL:'#171717'};bs.forEach((b,i)=>colors[b]=BRAND_COLOR_MAP[b]||palette[i%palette.length]);
   return {data:{summary,daily,stores,products,periods,brandSales,prior,priorMetrics,friendByBrand,friendSummaryByBrand,colors,comparisonMeta,couponUsage,couponOverlap,rawErp:filteredErp,bsList:bs,couponNumberRowsRaw:couponNumberRows,cumulativeSummary:JSON.parse(JSON.stringify(summary)),weeks:computeWeeks(filteredErp),dailyCurByBrand,dailyPriorByBrand},overview:ov,brands:bs,updated:overviewRows.map(r=>excelDate(r['업데이트 날짜'])).filter(Boolean).sort().pop()||''};
 }
