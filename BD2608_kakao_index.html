@@ -115,7 +115,9 @@ function renderDaily(){
     }
     canvas.style.display='';emptyEl.style.display='none';
     dailyChart=new Chart(canvas,{type:'line',data:{labels:rows.map(x=>x.name.slice(5)),datasets:[{label:`${labels[selected]} 실매출`,data:rows.map(x=>x.sales),borderColor:c,backgroundColor:c+'26',fill:true,tension:.3,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>won(c.raw)}}},scales:{y:{ticks:{callback:v=>(v/1000000).toFixed(0)+'백만'}},x:{grid:{display:false},ticks:{maxTicksLimit:12}}}}});
-    document.getElementById('dailyScope').textContent=`${labels[selected]} · ${rows[0].name} ~ ${rows[rows.length-1].name}${showPriorCompare?' · 전년도 비교 데이터 없음':''}`;
+    const ovInfo=(typeof eventOverview!=='undefined'&&eventOverview&&eventOverview[selected])?eventOverview[selected]:null;
+    const cutoffNote=ovInfo&&ovInfo.updated?` · 업데이트 날짜 ${ovInfo.updated} 기준(하루 전날까지 집계)`:(selected==='ALL'?'':' · 업데이트 날짜 미설정(전체 기간 표시 중)');
+    document.getElementById('dailyScope').textContent=`${labels[selected]} · ${rows[0].name} ~ ${rows[rows.length-1].name}${cutoffNote}${showPriorCompare?' · 전년도 비교 데이터 없음':''}`;
   }
 }
 document.getElementById('dailyCompareBtn').addEventListener('click',()=>{showPriorCompare=!showPriorCompare;renderDaily()});
