@@ -152,7 +152,10 @@ function renderFriend(){
     const sc=document.getElementById('friendScope');if(sc)sc.textContent='-';
     return;
   }
-  friendChart=new Chart(document.getElementById('friend'),{type:'line',data:{labels:rows.map(x=>x.date.slice(5)),datasets:[{label:b+' 친구수',data:rows.map(x=>x.friends),borderColor:color(b),backgroundColor:color(b)+'18',fill:true,tension:.3,pointRadius:4,pointHoverRadius:7,pointBackgroundColor:'#111',pointBorderColor:color(b),pointBorderWidth:2,pointHitRadius:10}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>num(c.raw)+'명'}}},scales:{x:{grid:{display:false},ticks:{maxTicksLimit:8}},y:{ticks:{callback:v=>(v/1000).toFixed(1)+'천'}}}}});
+  friendChart=new Chart(document.getElementById('friend'),{type:'line',data:{labels:rows.map(x=>x.date.slice(5)),datasets:[
+    {label:b+' 친구수(전체)',data:rows.map(x=>x.friends),borderColor:color(b),backgroundColor:color(b)+'18',borderDash:[6,4],fill:true,tension:.3,pointRadius:4,pointHoverRadius:7,pointBackgroundColor:'#111',pointBorderColor:color(b),pointBorderWidth:2,pointHitRadius:10,yAxisID:'y',order:1},
+    {label:b+' 채널 추가수(일별)',data:rows.map(x=>x.adds),borderColor:'#f59e0b',backgroundColor:'transparent',fill:false,tension:.3,pointRadius:3,pointHoverRadius:6,pointBackgroundColor:'#fff',pointBorderColor:'#f59e0b',pointBorderWidth:2,pointHitRadius:10,yAxisID:'y1',order:2}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'nearest',intersect:false},plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,font:{size:11}}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+num(c.raw)+'명'}}},scales:{x:{grid:{display:false},ticks:{maxTicksLimit:8}},y:{position:'left',ticks:{callback:v=>(v/1000).toFixed(1)+'천'}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>num(v)}}}}});
   const s=(D.friendSummaryByBrand&&D.friendSummaryByBrand[b])||{start:0,end:0,net:0,adds:0};
   document.getElementById('friendnote').textContent=`친구수 ${num(s.start)}명 → ${num(s.end)}명 (순증 ${num(s.net)}명), 채널 추가 합계 ${num(s.adds)}명`;
   const sc=document.getElementById('friendScope');if(sc)sc.textContent=`${availableBrands.join(', ')}만 집계`;
